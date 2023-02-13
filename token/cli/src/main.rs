@@ -7116,7 +7116,7 @@ mod tests {
         use spl_token_2022::extension::confidential_transfer::EncryptedWithheldAmount;
 
         let (test_validator, payer) = new_validator_for_test().await;
-        let mut config =
+        let config =
             test_config_with_default_signer(&test_validator, &payer, &spl_token_2022::id());
 
         let token_keypair = Keypair::new();

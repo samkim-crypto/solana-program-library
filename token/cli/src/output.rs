@@ -4,8 +4,9 @@ use serde::{Deserialize, Serialize, Serializer};
 use solana_account_decoder::{
     parse_token::{UiAccountState, UiMint, UiMultisig, UiTokenAccount, UiTokenAmount},
     parse_token_extension::{
-        UiCpiGuard, UiDefaultAccountState, UiExtension, UiInterestBearingConfig, UiMemoTransfer,
-        UiMintCloseAuthority, UiPermanentDelegate, UiTransferFeeAmount, UiTransferFeeConfig,
+        UiConfidentialTransferMint, UiCpiGuard, UiDefaultAccountState, UiExtension,
+        UiInterestBearingConfig, UiMemoTransfer, UiMintCloseAuthority, UiPermanentDelegate,
+        UiTransferFeeAmount, UiTransferFeeConfig,
     },
 };
 use solana_cli_output::{display::writeln_name_value, OutputFormat, QuietDisplay, VerboseDisplay};
@@ -631,7 +632,27 @@ fn display_ui_extension(
                 Ok(())
             }
         }
-        UiExtension::ConfidentialTransferMint(_) => unimplemented!(),
+        UiExtension::ConfidentialTransferMint(UiConfidentialTransferMint {
+            authority,
+            auto_approve_new_accounts,
+            auditor_encryption_pubkey,
+            ..
+        }) => {
+            writeln!(f, "  {}", style("Confidential transfer mint:").bold())?;
+            writeln_name_value(f, "    Authority:", &authority.to_string())?;
+
+            let account_approve_policy = if *auto_approve_new_accounts {
+                "auto"
+            } else {
+                "manual"
+            };
+            writeln_name_value(f, "    Account approve policy:", account_approve_policy)?;
+            writeln_name_value(
+                f,
+                "    Auditor encryption pubkey:",
+                &auditor_encryption_pubkey.to_string(),
+            )
+        }
         UiExtension::ConfidentialTransferAccount(_) => unimplemented!(),
         UiExtension::DefaultAccountState(UiDefaultAccountState { account_state }) => {
             writeln_name_value(f, "  Default state:", &format!("{:?}", account_state))
