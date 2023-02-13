@@ -474,6 +474,8 @@ where
             .construct_tx(token_instructions, signing_keypairs)
             .await?;
 
+        println!("{:?}", transaction);
+
         self.client
             .send_transaction(&transaction)
             .await
