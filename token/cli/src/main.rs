@@ -818,7 +818,20 @@ async fn command_authorize(
                         ))
                     }
                 }
-                AuthorityType::ConfidentialTransferMint => unimplemented!(),
+                AuthorityType::ConfidentialTransferMint => {
+                    if let Ok(confidential_transfer_mint) =
+                        mint.get_extension::<ConfidentialTransferMint>()
+                    {
+                        Ok(COption::<Pubkey>::from(
+                            confidential_transfer_mint.authority,
+                        ))
+                    } else {
+                        Err(format!(
+                            "Mint `{}` does not support confidential transfers",
+                            account
+                        ))
+                    }
+                }
             }?;
 
             Ok((account, previous_authority))
@@ -2661,13 +2674,14 @@ fn app<'a, 'b>(
                         .possible_values(&[
                             "mint", "freeze", "owner", "close",
                             "close-mint", "transfer-fee-config", "withheld-withdraw",
-                            "interest-rate", "permanent-delegate",
+                            "interest-rate", "permanent-delegate", "confidential-transfer-mint"
                         ])
                         .index(2)
                         .required(true)
                         .help("The new authority type. \
-                            Token mints support `mint` and `freeze` authorities;\
-                            Token accounts support `owner` and `close` authorities."),
+                            Token mints support `mint`, `freeze`, and mint extension authorities; \
+                            Token accounts support `owner`, `close`, and account extension \
+                            authorities."),
                 )
                 .arg(
                     Arg::with_name("new_authority")
@@ -3741,6 +3755,7 @@ async fn process_command<'a>(
                 "withheld-withdraw" => AuthorityType::WithheldWithdraw,
                 "interest-rate" => AuthorityType::InterestRate,
                 "permanent-delegate" => AuthorityType::PermanentDelegate,
+                "confidential-transfer-mint" => AuthorityType::ConfidentialTransferMint,
                 _ => unreachable!(),
             };
 
@@ -6896,7 +6911,11 @@ mod tests {
         let token_pubkey = token_keypair.pubkey();
         let bulk_signers: Vec<Arc<dyn Signer>> =
             vec![Arc::new(clone_keypair(&payer)), Arc::new(token_keypair)];
+
+        let confidential_transfer_mint_authority = payer.pubkey();
         let auto_approve = true;
+
+        println!("token_pubkey: {:?}", payer.pubkey());
 
         command_create_token(
             &config,
@@ -6923,8 +6942,10 @@ mod tests {
             .get_extension::<ConfidentialTransferMint>()
             .unwrap();
 
-        println!("{:?}", extension);
-
+        assert_eq!(
+            Option::<Pubkey>::from(extension.authority),
+            Some(confidential_transfer_mint_authority)
+        );
         assert_eq!(
             bool::from(extension.auto_approve_new_accounts),
             auto_approve,
@@ -6944,6 +6965,26 @@ mod tests {
             Some(EncryptedWithheldAmount::default()),
         );
 
-        println!("--END OF TEST--");
+        process_test_command(
+            &config,
+            &payer,
+            &[
+                "spl-token",
+                CommandName::Authorize.into(),
+                &token_pubkey.to_string(),
+                "confidential-transfer-mint",
+                "--disable",
+            ],
+        )
+        .await
+        .unwrap();
+
+        let account = config.rpc_client.get_account(&token_pubkey).await.unwrap();
+        let test_mint = StateWithExtensionsOwned::<Mint>::unpack(account.data).unwrap();
+        let extension = test_mint
+            .get_extension::<ConfidentialTransferMint>()
+            .unwrap();
+
+        assert_eq!(Option::<Pubkey>::from(extension.authority), None);
     }
 }
