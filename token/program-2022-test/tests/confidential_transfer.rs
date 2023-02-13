@@ -356,9 +356,10 @@ async fn ct_initialize_and_update_mint() {
 
     let err = token
         .confidential_transfer_update_mint(
-            &ct_mint_authority,
+            &ct_mint_authority.pubkey(),
             new_auto_approve_new_accounts,
             new_auditor_encryption_pubkey,
+            &[&ct_mint_authority],
         )
         .await
         .unwrap_err();
@@ -375,9 +376,10 @@ async fn ct_initialize_and_update_mint() {
 
     token
         .confidential_transfer_update_mint(
-            &new_ct_mint_authority,
+            &new_ct_mint_authority.pubkey(),
             new_auto_approve_new_accounts,
             new_auditor_encryption_pubkey,
+            &[&new_ct_mint_authority],
         )
         .await
         .unwrap();
