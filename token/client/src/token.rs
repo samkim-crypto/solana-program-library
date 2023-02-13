@@ -1498,21 +1498,22 @@ where
     }
 
     /// Update confidential transfer mint
-    pub async fn confidential_transfer_update_mint<S: Signer>(
+    pub async fn confidential_transfer_update_mint<S: Signers>(
         &self,
-        authority: &S,
+        authority: &Pubkey,
         auto_approve_new_account: bool,
         auditor_encryption_pubkey: Option<EncryptionPubkey>,
+        signing_keypair: &S,
     ) -> TokenResult<T::Output> {
         self.process_ixs(
             &[confidential_transfer::instruction::update_mint(
                 &self.program_id,
                 &self.pubkey,
-                &authority.pubkey(),
+                authority,
                 auto_approve_new_account,
                 auditor_encryption_pubkey,
             )?],
-            &[authority],
+            signing_keypair,
         )
         .await
     }

@@ -6401,6 +6401,7 @@ name = "spl-token-cli"
 version = "2.3.0"
 dependencies = [
  "assert_cmd",
+ "base64 0.13.0",
  "clap 2.34.0",
  "console",
  "indicatif",
@@ -6418,6 +6419,7 @@ dependencies = [
  "solana-sdk",
  "solana-test-validator",
  "solana-transaction-status",
+ "solana-zk-token-sdk",
  "spl-associated-token-account 1.1.2",
  "spl-memo 3.0.1",
  "spl-token 3.5.0",
